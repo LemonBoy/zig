@@ -5393,6 +5393,41 @@ static LLVMValueRef ir_render_sqrt(CodeGen *g, IrExecutable *executable, IrInstr
     return LLVMBuildCall(g->builder, fn_val, &op, 1, "");
 }
 
+static LLVMValueRef ir_render_extern_weak(CodeGen *g, IrExecutable *executable, IrInstructionExternWeak *instruction) {
+    ZigType *wanted_type = instruction->base.value.type;
+    assert(wanted_type->id == ZigTypeIdOptional);
+    ZigType *ptr_type = wanted_type->data.maybe.child_type;
+    assert(ptr_type->id == ZigTypeIdPointer);
+    ZigType *sym_type = ptr_type->data.pointer.child_type;
+
+    LLVMTypeRef sym_type_ref = get_llvm_type(g, sym_type);
+    LLVMTypeRef ptr_type_ref = get_llvm_type(g, ptr_type);
+
+    LLVMValueRef global_sym = LLVMAddGlobal(g->module, sym_type_ref, buf_ptr(instruction->name_buf));
+    LLVMSetLinkage(global_sym, LLVMExternalWeakLinkage);
+    LLVMSetGlobalConstant(global_sym, true);
+    LLVMSetAlignment(global_sym, LLVMABIAlignmentOfType(g->target_data_ref, sym_type_ref));
+
+    LLVMValueRef sym_ptr = LLVMBuildBitCast(g->builder, global_sym, ptr_type_ref, "");
+
+    LLVMValueRef usize_zero = LLVMConstNull(g->builtin_types.entry_usize->llvm_type);
+    LLVMValueRef nonnull_bit = LLVMBuildICmp(g->builder, LLVMIntNE, sym_ptr, usize_zero, "");
+
+    if (!handle_is_ptr(wanted_type)) {
+        return LLVMBuildSelect(g->builder, nonnull_bit, sym_ptr, LLVMConstNull(get_llvm_type(g, ptr_type)), "");
+    }
+
+    assert(instruction->tmp_ptr != nullptr);
+    assert(type_has_bits(sym_type));
+
+    LLVMValueRef val_ptr = LLVMBuildStructGEP(g->builder, instruction->tmp_ptr, maybe_child_index, "");
+    gen_assign_raw(g, val_ptr, ptr_type, sym_ptr);
+    LLVMValueRef maybe_ptr = LLVMBuildStructGEP(g->builder, instruction->tmp_ptr, maybe_null_index, "");
+    gen_store_untyped(g, nonnull_bit, maybe_ptr, 0, false);
+
+    return instruction->tmp_ptr;
+}
+
 static LLVMValueRef ir_render_bswap(CodeGen *g, IrExecutable *executable, IrInstructionBswap *instruction) {
     LLVMValueRef op = ir_llvm_value(g, instruction->op);
     ZigType *int_type = instruction->base.value.type;
@@ -5717,6 +5752,8 @@ static LLVMValueRef ir_render_instruction(CodeGen *g, IrExecutable *executable, 
             return ir_render_assert_zero(g, executable, (IrInstructionAssertZero *)instruction);
         case IrInstructionIdResizeSlice:
             return ir_render_resize_slice(g, executable, (IrInstructionResizeSlice *)instruction);
+        case IrInstructionIdExternWeak:
+            return ir_render_extern_weak(g, executable, (IrInstructionExternWeak *)instruction);
     }
     zig_unreachable();
 }
@@ -6837,6 +6874,9 @@ static void do_code_gen(CodeGen *g) {
                 IrInstructionVectorToArray *vector_to_array_instruction = (IrInstructionVectorToArray *)instruction;
                 alignment_bytes = get_abi_alignment(g, vector_to_array_instruction->vector->value.type);
                 slot = &vector_to_array_instruction->tmp_ptr;
+            } else if (instruction->id == IrInstructionIdExternWeak) {
+                IrInstructionExternWeak *extern_weak_instruction = (IrInstructionExternWeak *)instruction;
+                slot = &extern_weak_instruction->tmp_ptr;
             } else {
                 zig_unreachable();
             }
@@ -7329,6 +7369,7 @@ static void define_builtin_fns(CodeGen *g) {
     create_builtin_fn(g, BuiltinFnIdThis, "This", 0);
     create_builtin_fn(g, BuiltinFnIdBswap, "bswap", 2);
     create_builtin_fn(g, BuiltinFnIdBitReverse, "bitreverse", 2);
+    create_builtin_fn(g, BuiltinFnIdExternWeak, "externWeak", 2);
 }
 
 static const char *bool_to_str(bool b) {

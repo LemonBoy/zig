@@ -1173,6 +1173,14 @@ static void ir_print_export(IrPrint *irp, IrInstructionExport *instruction) {
     }
 }
 
+static void ir_print_extern_weak(IrPrint *irp, IrInstructionExternWeak *instruction) {
+    fprintf(irp->f, "@externWeak(");
+    ir_print_other_instruction(irp, instruction->name);
+    fprintf(irp->f, ",");
+    ir_print_other_instruction(irp, instruction->pointer_type);
+    fprintf(irp->f, ")");
+}
+
 static void ir_print_error_return_trace(IrPrint *irp, IrInstructionErrorReturnTrace *instruction) {
     fprintf(irp->f, "@errorReturnTrace(");
     switch (instruction->optional) {
@@ -1882,6 +1890,9 @@ static void ir_print_instruction(IrPrint *irp, IrInstruction *instruction) {
             break;
         case IrInstructionIdResizeSlice:
             ir_print_resize_slice(irp, (IrInstructionResizeSlice *)instruction);
+            break;
+        case IrInstructionIdExternWeak:
+            ir_print_extern_weak(irp, (IrInstructionExternWeak *)instruction);
             break;
     }
     fprintf(irp->f, "\n");

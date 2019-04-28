@@ -1003,6 +1003,10 @@ static constexpr IrInstructionId ir_instruction_id(IrInstructionAssertZero *) {
     return IrInstructionIdAssertZero;
 }
 
+static constexpr IrInstructionId ir_instruction_id(IrInstructionExternWeak *) {
+    return IrInstructionIdExternWeak;
+}
+
 template<typename T>
 static T *ir_create_instruction(IrBuilder *irb, Scope *scope, AstNode *source_node) {
     T *special_instruction = allocate<T>(1);
@@ -1556,6 +1560,19 @@ static IrInstruction *ir_build_export(IrBuilder *irb, Scope *scope, AstNode *sou
     if (linkage) ir_ref_instruction(linkage, irb->current_basic_block);
 
     return &export_instruction->base;
+}
+
+static IrInstruction *ir_build_extern_weak(IrBuilder *irb, Scope *scope, AstNode *source_node,
+        IrInstruction *name, IrInstruction *pointer_type)
+{
+    IrInstructionExternWeak *extern_weak_instruction = ir_build_instruction<IrInstructionExternWeak>(irb, scope, source_node);
+    extern_weak_instruction->name = name;
+    extern_weak_instruction->pointer_type = pointer_type;
+
+    ir_ref_instruction(name, irb->current_basic_block);
+    ir_ref_instruction(pointer_type, irb->current_basic_block);
+
+    return &extern_weak_instruction->base;
 }
 
 static IrInstruction *ir_build_load_ptr(IrBuilder *irb, Scope *scope, AstNode *source_node, IrInstruction *ptr) {
@@ -5077,6 +5094,21 @@ static IrInstruction *ir_gen_builtin_fn_call(IrBuilder *irb, Scope *scope, AstNo
 
                 IrInstruction *result = ir_build_bit_reverse(irb, scope, node, arg0_value, arg1_value);
                 return ir_lval_wrap(irb, scope, result, lval);
+            }
+        case BuiltinFnIdExternWeak:
+            {
+                AstNode *arg0_node = node->data.fn_call_expr.params.at(0);
+                IrInstruction *arg0_value = ir_gen_node(irb, arg0_node, scope);
+                if (arg0_value == irb->codegen->invalid_instruction)
+                    return arg0_value;
+
+                AstNode *arg1_node = node->data.fn_call_expr.params.at(1);
+                IrInstruction *arg1_value = ir_gen_node(irb, arg1_node, scope);
+                if (arg1_value == irb->codegen->invalid_instruction)
+                    return arg1_value;
+
+                IrInstruction *ir_export = ir_build_extern_weak(irb, scope, node, arg0_value, arg1_value);
+                return ir_lval_wrap(irb, scope, ir_export, lval);
             }
     }
     zig_unreachable();
@@ -22679,6 +22711,34 @@ static IrInstruction *ir_analyze_instruction_sqrt(IrAnalyze *ira, IrInstructionS
     return result;
 }
 
+static IrInstruction *ir_analyze_instruction_extern_weak(IrAnalyze *ira, IrInstructionExternWeak *instruction) {
+    Buf *symbol_name = ir_resolve_str(ira, instruction->name->child);
+    if (symbol_name == nullptr || buf_len(symbol_name) < 1) {
+        return ira->codegen->invalid_instruction;
+    }
+
+    ZigType *ptr_type = ir_resolve_type(ira, instruction->pointer_type->child);
+    if (type_is_invalid(ptr_type)) {
+        return ira->codegen->invalid_instruction;
+    }
+
+    if (ptr_type->id != ZigTypeIdPointer) {
+        ir_add_error(ira, instruction->pointer_type,
+            buf_sprintf("expected pointer type, found '%s'", buf_ptr(&ptr_type->name)));
+        return ira->codegen->invalid_instruction;
+    }
+
+    IrInstruction *result = ir_build_extern_weak(&ira->new_irb,
+                                                 instruction->base.scope,
+                                                 instruction->base.source_node,
+                                                 instruction->name,
+                                                 instruction->pointer_type);
+    result->value.type = get_optional_type(ira->codegen, ptr_type);
+    reinterpret_cast<IrInstructionExternWeak *>(result)->name_buf = symbol_name;
+    ir_add_alloca(ira, result, result->value.type);
+    return result;
+}
+
 static IrInstruction *ir_analyze_instruction_bswap(IrAnalyze *ira, IrInstructionBswap *instruction) {
     ZigType *int_type = ir_resolve_type(ira, instruction->type->child);
     if (type_is_invalid(int_type))
@@ -23149,6 +23209,8 @@ static IrInstruction *ir_analyze_instruction_nocast(IrAnalyze *ira, IrInstructio
             return ir_analyze_instruction_enum_to_int(ira, (IrInstructionEnumToInt *)instruction);
         case IrInstructionIdCheckRuntimeScope:
             return ir_analyze_instruction_check_runtime_scope(ira, (IrInstructionCheckRuntimeScope *)instruction);
+        case IrInstructionIdExternWeak:
+            return ir_analyze_instruction_extern_weak(ira, (IrInstructionExternWeak *)instruction);
     }
     zig_unreachable();
 }
@@ -23383,6 +23445,7 @@ bool ir_has_side_effects(IrInstruction *instruction) {
         case IrInstructionIdEnumToInt:
         case IrInstructionIdVectorToArray:
         case IrInstructionIdArrayToVector:
+        case IrInstructionIdExternWeak:
             return false;
 
         case IrInstructionIdAsm:

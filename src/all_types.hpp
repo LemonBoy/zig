@@ -1471,6 +1471,7 @@ enum BuiltinFnId {
     BuiltinFnIdAtomicLoad,
     BuiltinFnIdBswap,
     BuiltinFnIdBitReverse,
+    BuiltinFnIdExternWeak,
 };
 
 struct BuiltinFnEntry {
@@ -2293,6 +2294,7 @@ enum IrInstructionId {
     IrInstructionIdVectorToArray,
     IrInstructionIdArrayToVector,
     IrInstructionIdAssertZero,
+    IrInstructionIdExternWeak,
 };
 
 struct IrInstruction {
@@ -3271,6 +3273,16 @@ struct IrInstructionExport {
     IrInstruction *name;
     IrInstruction *linkage;
     IrInstruction *target;
+};
+
+struct IrInstructionExternWeak {
+    IrInstruction base;
+
+    IrInstruction *name;
+    IrInstruction *pointer_type;
+    Buf *name_buf;
+
+    LLVMValueRef tmp_ptr;
 };
 
 struct IrInstructionErrorReturnTrace {
