@@ -6,6 +6,10 @@ matrix:
 language:
     c
 
+cache:
+  directories:
+    - $HOME/Library/Caches/Homebrew
+
 before_install:
     - brew update
     - brew install llvm@8

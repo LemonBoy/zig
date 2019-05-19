@@ -1351,7 +1351,7 @@ static void init_rand() {
     }
     char bytes[sizeof(unsigned)];
     size_t amt_read;
-    while ((amt_read = read(fd, bytes, sizeof(unsigned))) == -1) {
+    while ((amt_read = read(fd, bytes, sizeof(unsigned))) != sizeof(unsigned)) {
         if (errno == EINTR) continue;
         zig_panic("unable to read /dev/urandom");
     }
