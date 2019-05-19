@@ -1,0 +1,19 @@
+os:
+    - osx
+
+language:
+    c
+
+compiler:
+    - clang
+
+before_install:
+    - wget -nv "https://ziglang.org/builds/llvm+clang-8.0.0-macos-x86_64-gcc8-release-static.tar.xz"
+    - tar xf "llvm+clang-8.0.0-macos-x86_64-gcc8-release-static.tar.xz"
+
+install:
+    - mkdir build
+    - cd build
+    - cmake .. -DCMAKE_PREFIX_PATH=$(pwd)/../llvm+clang-8.0.0-macos-x86_64-gcc8-release-static -DCMAKE_INSTALL_PREFIX=$(pwd)/installdir
+    - make -j3 install
+    - installdir/bin/zig --help
