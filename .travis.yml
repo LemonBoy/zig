@@ -2,9 +2,6 @@ matrix:
   include:
     - os: osx
       osx_image: xcode10.2
-      env:
-          - CC=gcc-8
-          - CXX=g++-8
 
 language:
     c
@@ -22,7 +19,7 @@ before_install:
 install:
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_PREFIX_PATH=$(pwd)/../llvm+clang-8.0.0-macos-x86_64-gcc8-release-static -DCMAKE_INSTALL_PREFIX=$(pwd)/installdir
+    - CC=gcc-8 CXX=g++-8 cmake .. -DCMAKE_PREFIX_PATH=$(pwd)/../llvm+clang-8.0.0-macos-x86_64-gcc8-release-static -DCMAKE_INSTALL_PREFIX=$(pwd)/installdir
     - make -j3 install
     - installdir/bin/zig --help
 
