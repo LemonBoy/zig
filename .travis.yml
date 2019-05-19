@@ -17,3 +17,5 @@ install:
     - cmake .. -DCMAKE_PREFIX_PATH=$(pwd)/../llvm+clang-8.0.0-macos-x86_64-gcc8-release-static -DCMAKE_INSTALL_PREFIX=$(pwd)/installdir
     - make -j3 install
     - installdir/bin/zig --help
+
+
