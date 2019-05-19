@@ -6,8 +6,8 @@ matrix:
 language:
     c
 
-compiler:
-    - gcc
+# compiler:
+#     - gcc
 
 before_install:
     - wget -nv "https://ziglang.org/builds/llvm+clang-8.0.0-macos-x86_64-gcc8-release-static.tar.xz"
