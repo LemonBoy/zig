@@ -1,15 +1,17 @@
 os:
     - osx
+      osx_image: xcode10.2
 
 language:
     c
 
 compiler:
-    - clang
+    - gcc
 
 before_install:
     - wget -nv "https://ziglang.org/builds/llvm+clang-8.0.0-macos-x86_64-gcc8-release-static.tar.xz"
     - tar xf "llvm+clang-8.0.0-macos-x86_64-gcc8-release-static.tar.xz"
+    - brew install gcc@8 && CC=gcc-8 && CXX=g++-8
 
 install:
     - mkdir build
@@ -18,4 +20,5 @@ install:
     - make -j3 install
     - installdir/bin/zig --help
 
-
+notifications:
+    email: false
