@@ -33,12 +33,8 @@ pub fn readULEB128Mem(comptime T: type, ptr: *[*]const u8) !T {
     var shift: usize = 0;
     var i: usize = 0;
 
-    std.debug.warn("readULEB128Mem\n");
-
     while (true) : (i += 1) {
         const byte = ptr.*[i];
-
-        std.debug.warn("byte 0x{x} shift {}\n", byte, shift);
 
         if (shift > T.bit_count)
             return error.Overflow;
@@ -98,12 +94,8 @@ pub fn readILEB128Mem(comptime T: type, ptr: *[*]const u8) !T {
     var shift: usize = 0;
     var i: usize = 0;
 
-    std.debug.warn("readILEB128Mem\n");
-
     while (true) : (i += 1) {
         const byte = ptr.*[i];
-
-        std.debug.warn("byte 0x{x} shift {}\n", byte, shift);
 
         if (shift > T.bit_count)
             return error.Overflow;
