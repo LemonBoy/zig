@@ -403,7 +403,7 @@ int main(int argc, char **argv) {
     const char *out_name = nullptr;
     bool verbose_tokenize = false;
     bool verbose_ast = false;
-    bool verbose_link = false;
+    bool verbose_link = true;
     bool verbose_ir = false;
     bool verbose_llvm_ir = false;
     bool verbose_cimport = false;
