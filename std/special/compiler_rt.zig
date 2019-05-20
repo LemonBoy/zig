@@ -6,7 +6,7 @@ comptime {
     const strong_linkage = if (is_test) builtin.GlobalLinkage.Internal else builtin.GlobalLinkage.Strong;
 
     switch (builtin.arch) {
-        .i386, .x86_64 => @export("__zig_probe_stack", @import("compiler_rt/stack_probe.zig").zig_probe_stack, linkage),
+        .i386, .x86_64 => @export("__zig_probe_stack", @import("compiler_rt/stack_probe.zig").zig_probe_stack, strong_linkage),
         else => {},
     }
 
