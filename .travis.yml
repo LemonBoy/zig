@@ -14,7 +14,9 @@ before_install:
     - brew update
     - brew install llvm@8
     - brew outdated llvm@8 || brew upgrade llvm@8
-    - brew install gcc@8 && brew link gcc && CC=gcc-8 && CXX=g++-8
+    - brew install gcc@8 || brew link --overwrite gcc
+    - export CC=gcc-8
+    - export CXX=g++-8
 
 install:
     - mkdir build
