@@ -297,6 +297,7 @@ enum ZigClangStmtClass {
     ZigClangStmt_OMPDistributeSimdDirectiveClass,
     ZigClangStmt_OMPForDirectiveClass,
     ZigClangStmt_OMPForSimdDirectiveClass,
+    ZigClangStmt_OMPMasterTaskLoopDirectiveClass,
     ZigClangStmt_OMPParallelForDirectiveClass,
     ZigClangStmt_OMPParallelForSimdDirectiveClass,
     ZigClangStmt_OMPSimdDirectiveClass,
