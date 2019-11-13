@@ -577,6 +577,11 @@ void ZigClang_detect_enum_StmtClass(clang::Stmt::StmtClass x) {
         case clang::Stmt::OMPTargetTeamsDistributeParallelForDirectiveClass:
         case clang::Stmt::OMPTargetTeamsDistributeParallelForSimdDirectiveClass:
         case clang::Stmt::OMPTargetTeamsDistributeSimdDirectiveClass:
+        case clang::Stmt::OMPMasterTaskLoopSimdDirectiveClass:
+        case clang::Stmt::OMPParallelMasterTaskLoopDirectiveClass:
+        case clang::Stmt::OMPParallelMasterTaskLoopSimdDirectiveClass:
+        case clang::Stmt::CXXRewrittenBinaryOperatorClass:
+        case clang::Stmt::ConceptSpecializationExprClass:
             break;
     }
 }
@@ -781,6 +786,11 @@ static_assert((clang::Stmt::StmtClass)ZigClangStmt_OMPTargetTeamsDistributeDirec
 static_assert((clang::Stmt::StmtClass)ZigClangStmt_OMPTargetTeamsDistributeParallelForDirectiveClass == clang::Stmt::OMPTargetTeamsDistributeParallelForDirectiveClass, "");
 static_assert((clang::Stmt::StmtClass)ZigClangStmt_OMPTargetTeamsDistributeParallelForSimdDirectiveClass == clang::Stmt::OMPTargetTeamsDistributeParallelForSimdDirectiveClass, "");
 static_assert((clang::Stmt::StmtClass)ZigClangStmt_OMPTargetTeamsDistributeSimdDirectiveClass == clang::Stmt::OMPTargetTeamsDistributeSimdDirectiveClass, "");
+static_assert((clang::Stmt::StmtClass)ZigClangStmt_OMPMasterTaskLoopSimdDirectiveClass == clang::Stmt::OMPMasterTaskLoopSimdDirectiveClass, "");
+static_assert((clang::Stmt::StmtClass)ZigClangStmt_OMPParallelMasterTaskLoopSimdDirectiveClass == clang::Stmt::OMPParallelMasterTaskLoopSimdDirectiveClass);
+static_assert((clang::Stmt::StmtClass)ZigClangStmt_OMPParallelMasterTaskLoopSimdDirectiveClass == clang::Stmt::OMPParallelMasterTaskLoopSimdDirectiveClass);
+static_assert((clang::Stmt::StmtClass)ZigClangStmt_CXXRewrittenBinaryOperatorClass == clang::Stmt::CXXRewrittenBinaryOperatorClass);
+static_assert((clang::Stmt::StmtClass)ZigClangStmt_ConceptSpecializationExprClass == clang::Stmt::ConceptSpecializationExprClass);
 
 void ZigClang_detect_enum_APValueKind(clang::APValue::ValueKind x) {
     switch (x) {

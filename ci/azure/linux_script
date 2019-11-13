@@ -12,7 +12,7 @@ sudo apt-get update -q
 
 sudo apt-get remove -y llvm-*
 sudo rm -rf /usr/local/*
-sudo apt-get install -y libxml2-dev libclang-9-dev llvm-9 llvm-9-dev cmake s3cmd gcc-7 g++-7 qemu
+sudo apt-get install -y libxml2-dev libclang-10-dev llvm-10 llvm-10-dev liblld-10-dev cmake s3cmd gcc-7 g++-7 qemu
 
 # Make the `zig version` number consistent.
 # This will affect the cmake command below.
@@ -22,7 +22,7 @@ export CC=gcc-7
 export CXX=g++-7
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DZIG_FORCE_EXTERNAL_LLD=ON
 make -j2 install
 ./zig build test -Denable-qemu
 VERSION="$(./zig version)"

@@ -4075,6 +4075,21 @@ static int trans_stmt_extra(Context *c, TransScope *scope, const ZigClangStmt *s
         case ZigClangStmt_OMPMasterTaskLoopDirectiveClass:
             emit_warning(c, ZigClangStmt_getBeginLoc(stmt), "TODO handle C OMPMasterTaskLoopDirectiveClass");
             return ErrorUnexpected;
+        case ZigClangStmt_OMPMasterTaskLoopSimdDirectiveClass:
+            emit_warning(c, ZigClangStmt_getBeginLoc(stmt), "TODO handle C OMPMasterTaskLoopSimdDirectiveClass");
+            return ErrorUnexpected;
+        case ZigClangStmt_OMPParallelMasterTaskLoopDirectiveClass:
+            emit_warning(c, ZigClangStmt_getBeginLoc(stmt), "TODO handle C OMPParallelMasterTaskLoopDirectiveClass");
+            return ErrorUnexpected;
+        case ZigClangStmt_OMPParallelMasterTaskLoopSimdDirectiveClass:
+            emit_warning(c, ZigClangStmt_getBeginLoc(stmt), "TODO handle C OMPParallelMasterTaskLoopSimdDirectiveClass");
+            return ErrorUnexpected;
+        case ZigClangStmt_CXXRewrittenBinaryOperatorClass:
+            emit_warning(c, ZigClangStmt_getBeginLoc(stmt), "TODO handle C CXXRewrittenBinaryOperatorClass");
+            return ErrorUnexpected;
+        case ZigClangStmt_ConceptSpecializationExprClass:
+            emit_warning(c, ZigClangStmt_getBeginLoc(stmt), "TODO handle C ConceptSpecializationExpr");
+            return ErrorUnexpected;
     }
     zig_unreachable();
 }
