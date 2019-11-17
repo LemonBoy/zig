@@ -2683,6 +2683,9 @@ static int trans_local_declaration(Context *c, TransScope *scope, const ZigClang
             case ZigClangDeclOMPAllocate:
                 emit_warning(c, ZigClangDeclStmt_getBeginLoc(stmt), "TODO handle C OMPAllocate");
                 return ErrorUnexpected;
+            case ZigClangDeclLifetimeExtendedTemporary:
+                emit_warning(c, ZigClangDeclStmt_getBeginLoc(stmt), "TODO handle C LifetimeExtendedTemporary");
+                return ErrorUnexpected;
         }
         zig_unreachable();
     }

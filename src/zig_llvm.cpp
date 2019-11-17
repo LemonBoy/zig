@@ -43,6 +43,8 @@
 #include <llvm/Support/Timer.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/CodeGen.h>
+#include <llvm/Support/CommandLine.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/CodeGenCWrappers.h>
 #include <llvm/Transforms/IPO.h>
@@ -224,14 +226,14 @@ bool ZigLLVMTargetMachineEmitToFile(LLVMTargetMachineRef targ_machine_ref, LLVMM
     PMBuilder->populateModulePassManager(MPM);
 
     // Set output pass.
-    TargetMachine::CodeGenFileType ft;
+    CodeGenFileType ft;
     if (output_type != ZigLLVM_EmitLLVMIr) {
         switch (output_type) {
             case ZigLLVM_EmitAssembly:
-                ft = TargetMachine::CGFT_AssemblyFile;
+                ft = CodeGenFileType::CGFT_AssemblyFile;
                 break;
             case ZigLLVM_EmitBinary:
-                ft = TargetMachine::CGFT_ObjectFile;
+                ft = CodeGenFileType::CGFT_ObjectFile;
                 break;
             default:
                 abort();

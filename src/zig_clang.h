@@ -549,6 +549,7 @@ enum ZigClangDeclKind {
     ZigClangDeclFriend,
     ZigClangDeclFriendTemplate,
     ZigClangDeclImport,
+    ZigClangDeclLifetimeExtendedTemporary,
     ZigClangDeclLinkageSpec,
     ZigClangDeclLabel,
     ZigClangDeclNamespace,
