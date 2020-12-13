@@ -772,16 +772,15 @@ pub const sigval = extern union {
     ptr: ?*c_void,
 };
 
-pub const siginfo_t = extern union {
-    pad: [128]u8,
-    info: _ksiginfo,
-};
+const SI_MAXSZ = 128;
+const SI_PAD = ((SI_MAXSZ / @sizeOf(c_int)) - 3);
 
-pub const _ksiginfo = extern struct {
+pub const siginfo_t = extern struct {
     signo: c_int,
     code: c_int,
     errno: c_int,
     data: extern union {
+        _pad: [SI_PAD]c_int,
         proc: extern struct {
             pid: pid_t,
             uid: uid_t,
@@ -798,7 +797,7 @@ pub const _ksiginfo = extern struct {
 };
 
 pub const sigset_t = c_uint;
-pub const empty_sigset = sigset_t(0);
+pub const empty_sigset: sigset_t = 0;
 
 pub const EPERM = 1; // Operation not permitted
 pub const ENOENT = 2; // No such file or directory
