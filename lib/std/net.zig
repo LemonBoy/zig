@@ -22,15 +22,8 @@ const is_windows = builtin.os.tag == .windows;
 // Windows 10 added support for unix sockets in build 17063, redstone 4 is the
 // first release to support them.
 pub const has_unix_sockets = @hasDecl(os, "sockaddr_un") and
-    (builtin.os.tag != .windows or
+    (!is_windows or
     std.Target.current.os.version_range.windows.isAtLeast(.win10_rs4) orelse false);
-
-// Platform-independent socket descriptor.
-// Note that on some platforms this may not be interchangeable with a regular
-// files descriptor.
-pub const Socket = extern struct {
-    handle: os.socket_t,
-};
 
 fn setSocketNonBlocking(handle: os.socket_t, nonblocking: bool) !void {
     if (is_windows) {
@@ -794,7 +787,7 @@ pub fn getAddressList(allocator: *mem.Allocator, name: []const u8, port: u16) !*
 }
 
 pub const TcpClient = struct {
-    socket: Socket,
+    handle: os.socket_t,
 
     pub const ReadError = os.RecvFromError;
     pub const WriteError = os.SendError;
@@ -882,7 +875,7 @@ pub const TcpClient = struct {
             try os.connect(sockfd, &address.any, address.getOsSockLen());
         }
 
-        return TcpClient{ .socket = .{ .handle = sockfd } };
+        return TcpClient{ .handle = sockfd };
     }
 
     pub fn read(self: TcpClient, buffer: []u8) ReadError!usize {
@@ -890,7 +883,7 @@ pub const TcpClient = struct {
             @panic("implement me");
         } else {
             const flags: u32 = if (@hasDecl(os, "MSG_NOSIGNAL")) os.MSG_NOSIGNAL else 0;
-            return os.recv(self.socket.handle, buffer, flags);
+            return os.recv(self.handle, buffer, flags);
         }
     }
     pub fn write(self: TcpClient, buffer: []const u8) WriteError!usize {
@@ -898,15 +891,15 @@ pub const TcpClient = struct {
             @panic("implement me");
         } else {
             const flags: u32 = if (@hasDecl(os, "MSG_NOSIGNAL")) os.MSG_NOSIGNAL else 0;
-            return os.send(self.socket.handle, buffer, flags);
+            return os.send(self.handle, buffer, flags);
         }
     }
 
     pub fn shutdown(self: TcpClient, endpoint: os.ShutdownHow) !void {
-        return os.shutdown(self.socket.handle, endpoint);
+        return os.shutdown(self.handle, endpoint);
     }
     pub fn close(self: *TcpClient) void {
-        os.closeSocket(self.socket.handle);
+        os.closeSocket(self.handle);
     }
 
     pub fn reader(self: TcpClient) Reader {
@@ -918,7 +911,7 @@ pub const TcpClient = struct {
 
     pub fn setNodelay(self: TcpClient, nodelay: bool) !void {
         try os.setsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             if (is_windows) os.TCP_NODELAY else os.SO_NODELAY,
             &mem.toBytes(@as(i32, @boolToInt(nodelay))),
@@ -927,7 +920,7 @@ pub const TcpClient = struct {
     pub fn getNodelay(self: TcpClient) !bool {
         var value: u32 = undefined;
         _ = try os.getsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             if (is_windows) os.TCP_NODELAY else os.SO_NODELAY,
             mem.asBytes(&value),
@@ -937,7 +930,7 @@ pub const TcpClient = struct {
 
     pub fn setKeepalive(self: TcpClient, keepalive: bool) !void {
         try os.setsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             os.SO_KEEPALIVE,
             &mem.toBytes(@as(i32, @boolToInt(keepalive))),
@@ -946,7 +939,7 @@ pub const TcpClient = struct {
     pub fn getKeepalive(self: TcpClient) !bool {
         var value: u32 = undefined;
         _ = try os.getsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             os.SO_KEEPALIVE,
             mem.asBytes(&value),
@@ -956,7 +949,7 @@ pub const TcpClient = struct {
 
     pub fn setReadTimeout(self: TcpClient, timeout_ms: u32) !void {
         try os.setsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             os.SO_RCVTIMEO,
             &mem.toBytes(@bitCast(i32, timeout_ms)),
@@ -967,7 +960,7 @@ pub const TcpClient = struct {
 
         var value: u32 = undefined;
         _ = try os.getsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             os.SO_RCVTIMEO,
             mem.asBytes(&value),
@@ -977,7 +970,7 @@ pub const TcpClient = struct {
 
     pub fn setWriteTimeout(self: TcpClient, timeout_ms: u32) !void {
         try os.setsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             os.SO_SNDTIMEO,
             &mem.toBytes(@bitCast(i32, timeout_ms)),
@@ -988,7 +981,7 @@ pub const TcpClient = struct {
 
         var value: u32 = undefined;
         _ = try os.getsockopt(
-            self.socket.handle,
+            self.handle,
             os.SOL_SOCKET,
             os.SO_SNDTIMEO,
             mem.asBytes(&value),
@@ -998,7 +991,7 @@ pub const TcpClient = struct {
 };
 
 pub const UnixClient = struct {
-    socket: Socket,
+    handle: os.socket_t,
 
     pub const ReadError = os.RecvFromError;
     pub const WriteError = os.SendError;
@@ -1043,7 +1036,7 @@ pub const UnixClient = struct {
             try os.connect(sockfd, &address.any, address.getOsSockLen());
         }
 
-        return UnixClient{ .socket = .{ .handle = sockfd } };
+        return UnixClient{ .handle = sockfd };
     }
 
     pub fn read(self: UnixClient, buffer: []u8) ReadError!usize {
@@ -1051,7 +1044,7 @@ pub const UnixClient = struct {
             @panic("implement me");
         } else {
             const flags: u32 = if (@hasDecl(os, "MSG_NOSIGNAL")) os.MSG_NOSIGNAL else 0;
-            return os.recv(self.socket.handle, buffer, flags);
+            return os.recv(self.handle, buffer, flags);
         }
     }
     pub fn write(self: UnixClient, buffer: []const u8) WriteError!usize {
@@ -1059,12 +1052,12 @@ pub const UnixClient = struct {
             @panic("implement me");
         } else {
             const flags: u32 = if (@hasDecl(os, "MSG_NOSIGNAL")) os.MSG_NOSIGNAL else 0;
-            return os.send(self.socket.handle, buffer, flags);
+            return os.send(self.handle, buffer, flags);
         }
     }
 
     pub fn close(self: *UnixClient) void {
-        os.closeSocket(self.socket.handle);
+        os.closeSocket(self.handle);
     }
 
     pub fn reader(self: UnixClient) Reader {
@@ -1076,7 +1069,7 @@ pub const UnixClient = struct {
 };
 
 pub const UdpClient = struct {
-    socket: Socket,
+    handle: os.socket_t,
     is_bound: bool,
 
     pub const ConnectOptions = struct {
@@ -1134,7 +1127,7 @@ pub const UdpClient = struct {
         }
 
         return UdpClient{
-            .socket = .{ .handle = sockfd },
+            .handle = sockfd,
             .is_bound = true,
         };
     }
@@ -1180,7 +1173,7 @@ pub const UdpClient = struct {
         }
 
         return UdpClient{
-            .socket = .{ .handle = sockfd },
+            .handle = sockfd,
             .is_bound = false,
         };
     }
@@ -1191,7 +1184,7 @@ pub const UdpClient = struct {
         } else {
             assert(self.is_bound);
             const flags: u32 = if (@hasDecl(os, "MSG_NOSIGNAL")) os.MSG_NOSIGNAL else 0;
-            return os.recvfrom(self.socket.handle, buffer, flags, null, null);
+            return os.recvfrom(self.handle, buffer, flags, null, null);
         }
     }
     pub fn send(self: UdpClient, buffer: []const u8) os.SendToError!usize {
@@ -1200,7 +1193,7 @@ pub const UdpClient = struct {
         } else {
             const flags: u32 = if (@hasDecl(os, "MSG_NOSIGNAL")) os.MSG_NOSIGNAL else 0;
             assert(self.is_bound);
-            return os.sendto(self.socket.handle, buffer, flags, null, null);
+            return os.sendto(self.handle, buffer, flags, null, null);
         }
     }
 
@@ -1214,7 +1207,7 @@ pub const UdpClient = struct {
             var source_address: Address = undefined;
             var source_address_size: os.socklen_t = @sizeOf(Address);
             const bytes_read = try os.recvfrom(
-                self.socket.handle,
+                self.handle,
                 buffer,
                 flags,
                 &source_address.any,
@@ -1229,7 +1222,7 @@ pub const UdpClient = struct {
         } else {
             const flags: u32 = if (@hasDecl(os, "MSG_NOSIGNAL")) os.MSG_NOSIGNAL else 0;
             return os.sendto(
-                self.socket.handle,
+                self.handle,
                 buffer,
                 flags,
                 &target.any,
@@ -1239,12 +1232,12 @@ pub const UdpClient = struct {
     }
 
     pub fn close(self: *UdpClient) void {
-        os.closeSocket(self.socket.handle);
+        os.closeSocket(self.handle);
     }
 };
 
 pub const UnixListener = struct {
-    socket: Socket,
+    handle: os.socket_t,
     listen_address: Address,
 
     pub const ListenOptions = struct {
@@ -1265,7 +1258,7 @@ pub const UnixListener = struct {
         try os.listen(sockfd, options.kernel_backlog);
 
         var listener = UnixListener{
-            .socket = .{ .handle = sockfd },
+            .handle = sockfd,
             .listen_address = undefined,
         };
 
@@ -1275,7 +1268,7 @@ pub const UnixListener = struct {
     }
 
     pub fn close(self: *UnixListener) void {
-        os.closeSocket(self.socket.handle);
+        os.closeSocket(self.handle);
     }
 
     pub const AcceptError = error{
@@ -1322,7 +1315,7 @@ pub const UnixListener = struct {
                 @panic("implement me");
             } else {
                 break :blk os.accept(
-                    self.socket.handle,
+                    self.handle,
                     &accepted_addr.any,
                     &adr_len,
                     os.SOCK_CLOEXEC,
@@ -1332,7 +1325,7 @@ pub const UnixListener = struct {
 
         if (accept_result) |fd| {
             return Connection{
-                .client = UnixClient{ .socket = .{ .handle = fd } },
+                .client = UnixClient{ .handle = fd },
                 .address = accepted_addr,
             };
         } else |err| switch (err) {
@@ -1343,7 +1336,7 @@ pub const UnixListener = struct {
 };
 
 pub const TcpListener = struct {
-    socket: Socket,
+    handle: os.socket_t,
     listen_address: Address,
 
     pub const ListenOptions = struct {
@@ -1376,7 +1369,7 @@ pub const TcpListener = struct {
         try os.listen(sockfd, options.kernel_backlog);
 
         var listener = TcpListener{
-            .socket = .{ .handle = sockfd },
+            .handle = sockfd,
             .listen_address = undefined,
         };
 
@@ -1386,7 +1379,7 @@ pub const TcpListener = struct {
     }
 
     pub fn close(self: *TcpListener) void {
-        os.closeSocket(self.socket.handle);
+        os.closeSocket(self.handle);
     }
 
     pub const AcceptError = error{
@@ -1433,7 +1426,7 @@ pub const TcpListener = struct {
                 @panic("implement me");
             } else {
                 break :blk os.accept(
-                    self.socket.handle,
+                    self.handle,
                     &accepted_addr.any,
                     &adr_len,
                     os.SOCK_CLOEXEC,
@@ -1443,7 +1436,7 @@ pub const TcpListener = struct {
 
         if (accept_result) |fd| {
             return Connection{
-                .client = TcpClient{ .socket = .{ .handle = fd } },
+                .client = TcpClient{ .handle = fd },
                 .address = accepted_addr,
             };
         } else |err| switch (err) {
