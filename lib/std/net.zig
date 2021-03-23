@@ -637,7 +637,7 @@ pub const Ip6Address = extern struct {
     }
 };
 
-fn if_nametoindex(name: []const u8) !u32 {
+pub fn if_nametoindex(name: []const u8) !u32 {
     var ifr: os.ifreq = undefined;
     var sockfd = try os.socket(os.AF_UNIX, os.SOCK_DGRAM | os.SOCK_CLOEXEC, 0);
     defer os.closeSocket(sockfd);
